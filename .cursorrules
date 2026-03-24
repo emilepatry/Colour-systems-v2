@@ -1,0 +1,31 @@
+## Design Context
+
+### Project
+Colour Systems v2 is the foundation for a design tool that helps design engineers build accessible, perceptually uniform colour palettes. The repo contains OKLCH colour theory docs, Poline palette-generation theory, React UI prototypes (Devouring Details), UX frameworks, and Cursor workflow commands. It is not a runnable app — it is a knowledge base and component library that the tool will be built from.
+
+### Users
+Design engineers — people who work at the intersection of visual design and code. They expect precision, transparency, and tools that feel as clear as well-written documentation.
+
+### Brand Personality
+Bold, expressive, creative — but channelled through Vercel/Stripe-level craft. Confidence without clutter.
+
+### Aesthetic Direction
+- **Visual model:** Vercel / Stripe — minimal, precise, high-contrast, developer-tool aesthetic
+- **Theme:** Light only
+- **Colour in UI:** Restrained chrome; the tool's own interface stays mostly neutral so that user-generated palettes are the visual focus
+- **Colour model:** OKLCH-first. All new colour work uses OKLCH. Existing HSL/hex should be migrated over time.
+- **Typography:** DD (custom sans) + JetBrains Mono. system.css defines a rem-based scale from 10px to 64px.
+- **Anti-references:** Ignore any Heron / Fullscript references in cursor commands — those belong to a separate project
+
+### Accessibility
+WCAG AA minimum. The docs already encode perceptual contrast methodology (OKLCH lightness bands, APCA awareness) — the tool should practice what it teaches.
+
+### Stack
+Vite + React + Tailwind CSS v4 + shadcn/ui for primitives + motion/react (Framer Motion) for spring physics and gestures + Zustand for state. Colour math is a custom OKLCH TypeScript engine — no external colour library. See [BRIEF.md](planning/BRIEF.md) for rationale.
+
+### Design Principles
+1. **Neutral canvas, expressive output** — The tool's chrome is restrained and precise so user-generated palettes take centre stage. Bold expression lives in what the tool produces, not in the tool's own decoration.
+2. **OKLCH-native** — Perceptual uniformity is a first-class concern. All colour specification, generation, and documentation uses OKLCH as the primary model.
+3. **Precision with personality** — Stripe-level craft, whitespace discipline, and typographic confidence. Minimal but never sterile.
+4. **Engineer-facing clarity** — Every UI surface, label, and interaction should feel as clear and honest as well-written documentation. No mystery meat.
+5. **Accessible by default** — WCAG AA is the floor. Contrast, reduced motion, and colour-blind safety are built into the methodology, not bolted on after.

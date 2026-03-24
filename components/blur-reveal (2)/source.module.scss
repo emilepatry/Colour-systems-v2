@@ -1,0 +1,45 @@
+.root {
+  --height: 50px;
+  position: relative;
+  overflow-x: clip;
+  padding: 0 32px;
+  display: flex;
+}
+
+.banner {
+  clip-path: inset(0 100% 0 0 round 9999px);
+  animation: unclip var(--duration-clip) ease-in-out forwards;
+}
+
+.blur {
+  width: 100%;
+  height: calc(100% + var(--height));
+  mask-image: linear-gradient(to left, #000 90%, transparent);
+  backdrop-filter: blur(var(--blur)) saturate(300%);
+  animation: reveal var(--duration) ease-in-out forwards;
+}
+
+.noise {
+  width: 100%;
+  height: calc(100% + var(--height));
+  mask-image: linear-gradient(to left, #000 90%, transparent);
+  mix-blend-mode: color-burn;
+  animation: reveal var(--duration) ease-in-out forwards;
+
+  @media (prefers-color-scheme: dark) {
+    mix-blend-mode: multiply;
+    filter: contrast(300%);
+  }
+}
+
+@keyframes reveal {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes unclip {
+  to {
+    clip-path: inset(0 0 0 0 round 9999px);
+  }
+}
