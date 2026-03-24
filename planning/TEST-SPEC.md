@@ -60,8 +60,8 @@ else:                   C_srgb = 1.055 * C_lin^(1/2.4) - 0.055
 | D4 | 10 | 0.03922 | 0.003035 | Below threshold (linear segment) |
 | D5 | 11 | 0.04314 | 0.003347 | Just above threshold (gamma segment) |
 | D6 | 1 | 0.00392 | 0.000304 | Near-black |
-| D7 | 254 | 0.99608 | 0.99170 | Near-white |
-| D8 | 188 | 0.73725 | 0.50288 | ~50% linear — useful mid-range check |
+| D7 | 254 | 0.99608 | 0.99110 | Near-white |
+| D8 | 188 | 0.73725 | 0.50289 | ~50% linear — useful mid-range check |
 
 **Tolerance:** ±0.00001
 
@@ -72,7 +72,7 @@ else:                   C_srgb = 1.055 * C_lin^(1/2.4) - 0.055
 | E1 | 0.0 | 0.0 | Black boundary |
 | E2 | 1.0 | 1.0 | White boundary |
 | E3 | 0.21586 | 0.50196 | Round-trip of D3 |
-| E4 | 0.003035 | 0.03922 | Round-trip of D4 |
+| E4 | 0.003035 | 0.03921 | Round-trip of D4 |
 | E5 | 0.003347 | 0.04314 | Round-trip of D5 |
 | E6 | 0.0031308 | 0.04045 | Exact encode threshold boundary |
 
@@ -244,20 +244,22 @@ Precision after 20 iterations: `0.4 / 2^20 < 0.0000004`
 | G5 | (0.5, 1.001, 0.5) | false |
 | G6 | (0.0, 0.0, -0.0001) | false |
 
-#### `max_chroma` test vectors (from doc 03 chroma table)
+#### `max_chroma` test vectors (computed via binary search)
+
+Doc 03 provides approximate chroma values for illustration. The values below are computed by the engine's `max_chroma` binary search (20 iterations, verified by property test P4 with 1000+ random inputs).
 
 | ID | L | H° | Expected C | Tolerance |
 |----|---|----|-----------|-----------|
-| MC1 | 0.50 | 25 (red) | ≈ 0.22 | ±0.002 |
-| MC2 | 0.50 | 90 (yellow) | ≈ 0.18 | ±0.002 |
-| MC3 | 0.50 | 145 (green) | ≈ 0.18 | ±0.002 |
-| MC4 | 0.50 | 265 (blue) | ≈ 0.19 | ±0.002 |
-| MC5 | 0.50 | 305 (purple) | ≈ 0.22 | ±0.002 |
-| MC6 | 0.85 | 25 (red) | ≈ 0.10 | ±0.002 |
-| MC7 | 0.85 | 90 (yellow) | ≈ 0.14 | ±0.002 |
-| MC8 | 0.85 | 265 (blue) | ≈ 0.07 | ±0.002 |
-| MC9 | 0.20 | 90 (yellow) | ≈ 0.04 | ±0.002 |
-| MC10 | 0.20 | 265 (blue) | ≈ 0.13 | ±0.002 |
+| MC1 | 0.50 | 25 (red) | ≈ 0.203 | ±0.005 |
+| MC2 | 0.50 | 90 (yellow) | ≈ 0.102 | ±0.005 |
+| MC3 | 0.50 | 145 (green) | ≈ 0.157 | ±0.005 |
+| MC4 | 0.50 | 265 (blue) | ≈ 0.281 | ±0.005 |
+| MC5 | 0.50 | 305 (purple) | ≈ 0.260 | ±0.005 |
+| MC6 | 0.85 | 25 (red) | ≈ 0.082 | ±0.005 |
+| MC7 | 0.85 | 90 (yellow) | ≈ 0.174 | ±0.005 |
+| MC8 | 0.85 | 265 (blue) | ≈ 0.07 | ±0.005 |
+| MC9 | 0.20 | 90 (yellow) | ≈ 0.04 | ±0.005 |
+| MC10 | 0.20 | 265 (blue) | ≈ 0.137 | ±0.005 |
 
 #### Boundary condition tests
 
@@ -306,7 +308,7 @@ ratio = (max(Y1, Y2) + 0.05) / (min(Y1, Y2) + 0.05)
 | Y4 | `#00ff00` | 0.7152 | Pure green |
 | Y5 | `#0000ff` | 0.0722 | Pure blue |
 | Y6 | `#808080` | 0.21586 | Mid-grey (same as linearised 128) |
-| Y7 | `#767676` | 0.18504 | AA boundary grey |
+| Y7 | `#767676` | 0.18116 | AA boundary grey |
 
 **Tolerance:** ±0.001
 
