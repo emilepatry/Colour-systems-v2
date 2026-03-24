@@ -57,4 +57,5 @@ export interface OptimizationResult {
   adjustments: Adjustment[]
   infeasible: InfeasibilityReport[]
   regressions: ContrastEdge[]
+  intents: IntentMap
 }
