@@ -12,6 +12,7 @@ import {
   type PaletteOutput,
 } from '@/colour-math'
 import { runEngineC, type OptimizationResult } from '@/engine-c'
+import { mapSemanticTokens, deriveComponentTokens, type SemanticTokenSet, type ComponentTokenSet } from '@/engine-d'
 import { resolveDarkCurve } from '@/lib/dark-curve'
 
 // ─── Source State (undo boundary) ────────────────────────────────────
@@ -36,12 +37,16 @@ interface DerivedState {
   hueOutputs: HueOutput[]
   palette: PaletteOutput | null
   optimization: OptimizationResult | null
+  semanticTokens: SemanticTokenSet | null
+  componentTokens: ComponentTokenSet | null
   gamutBoundary: number[]
   activeAnchorIndex: number | null
   darkLightnessCurve: number[]
   darkDisplayL: number
   darkPalette: PaletteOutput | null
   darkOptimization: OptimizationResult | null
+  darkSemanticTokens: SemanticTokenSet | null
+  darkComponentTokens: ComponentTokenSet | null
   darkGamutBoundary: number[]
 }
 
@@ -123,6 +128,20 @@ function safeRunEngineC(
   try { return runEngineC(palette, mode) } catch { return null }
 }
 
+function safeMapSemanticTokens(
+  result: OptimizationResult,
+  mode: 'light' | 'dark',
+  globalVibrancy: number,
+): SemanticTokenSet | null {
+  try { return mapSemanticTokens(result, mode, globalVibrancy) } catch { return null }
+}
+
+function safeDeriveComponentTokens(
+  semantic: SemanticTokenSet,
+): ComponentTokenSet | null {
+  try { return deriveComponentTokens(semantic) } catch { return null }
+}
+
 function computeDerived(
   source: SourceState,
   skipCrossValidation = false,
@@ -149,6 +168,14 @@ function computeDerived(
 
   const optimization = palette && !skipCrossValidation
     ? safeRunEngineC(palette, 'light')
+    : null
+
+  const semanticTokens = optimization
+    ? safeMapSemanticTokens(optimization, 'light', source.globalVibrancy)
+    : null
+
+  const componentTokens = semanticTokens
+    ? safeDeriveComponentTokens(semanticTokens)
     : null
 
   const gamutBoundary = Array.from(
@@ -178,6 +205,14 @@ function computeDerived(
     ? safeRunEngineC(darkPalette, 'dark')
     : null
 
+  const darkSemanticTokens = darkOptimization
+    ? safeMapSemanticTokens(darkOptimization, 'dark', source.globalVibrancy)
+    : null
+
+  const darkComponentTokens = darkSemanticTokens
+    ? safeDeriveComponentTokens(darkSemanticTokens)
+    : null
+
   const darkDisplayL =
     darkLightnessCurve[Math.floor(darkLightnessCurve.length / 2)] ?? 0.60
 
@@ -187,8 +222,8 @@ function computeDerived(
   )
 
   return {
-    hueOutputs, palette, optimization, gamutBoundary,
-    darkLightnessCurve, darkDisplayL, darkPalette, darkOptimization, darkGamutBoundary,
+    hueOutputs, palette, optimization, semanticTokens, componentTokens, gamutBoundary,
+    darkLightnessCurve, darkDisplayL, darkPalette, darkOptimization, darkSemanticTokens, darkComponentTokens, darkGamutBoundary,
   }
 }
 

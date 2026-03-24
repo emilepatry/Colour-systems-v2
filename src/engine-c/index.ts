@@ -19,5 +19,6 @@ export function runEngineC(
 ): OptimizationResult {
   const intents = classifyPalette(palette.scales, mode)
   const graph = buildInteractionGraph(palette.scales, intents)
-  return solve(palette.scales, graph, intents)
+  const result = solve(palette.scales, graph, intents)
+  return { ...result, intents }
 }

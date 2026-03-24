@@ -3,13 +3,15 @@ import { usePaletteStore, extractSource } from '@/store'
 import { useActivePalette } from '@/hooks/useActivePalette'
 import { encodeState } from '@/lib/url-state'
 import { handleGlobalKeyDown } from '@/lib/keyboard-handler'
+import { AnimatePresence } from 'motion/react'
 import ColourWheel from '@/components/ColourWheel'
 import ControlPanel from '@/components/ControlPanel'
-import LightnessCurveEditor from '@/components/LightnessCurveEditor'
+import GestureHint, { useFirstVisit } from '@/components/GestureHint'
 import ScaleStrip from '@/components/ScaleStrip'
 import TokenPreview from '@/components/TokenPreview'
 import ExportSheet from '@/components/ExportSheet'
 import InfeasibilitySummary from '@/components/InfeasibilitySummary'
+import ReadinessChecklist from '@/components/ReadinessChecklist'
 import { Button } from '@/components/ui/button'
 
 const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
@@ -127,7 +129,8 @@ function ShortcutOverlay({ onClose }: { onClose: () => void }) {
 }
 
 export default function App() {
-  const { activeMode, palette } = useActivePalette()
+  const { palette } = useActivePalette()
+  const { isFirstVisit, dismiss: dismissFirstVisit } = useFirstVisit()
   const [exportOpen, setExportOpen] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -188,20 +191,37 @@ export default function App() {
     : []
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-8">
+    <main className="min-h-screen flex flex-col items-center p-8">
+      <header className="w-full max-w-[1200px] mb-12">
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: '#1a1a1a' }}>
+          Colour Systems
+        </h1>
+        <p
+          className="text-[13px] mt-1"
+          style={{ fontFamily: MONO_FONT, color: '#999' }}
+        >
+          OKLCH-native colour system generator with real-time token preview
+        </p>
+      </header>
       <div className="flex flex-col md:flex-row items-start gap-12 w-full max-w-[1200px]">
         <div className="w-full md:w-[450px] shrink-0 flex flex-col gap-8">
-          <ColourWheel />
-          <ControlPanel />
-          <div className="flex flex-col gap-1">
-            <span
-              className="text-[11px]"
-              style={{ fontFamily: MONO_FONT, color: '#999' }}
-            >
-              Lightness Curve{activeMode === 'dark' ? ' (Dark)' : ''}
-            </span>
-            <LightnessCurveEditor />
+          <div className="relative" onPointerDown={() => { if (isFirstVisit) dismissFirstVisit() }}>
+            <ColourWheel />
+            <AnimatePresence>
+              {isFirstVisit && <GestureHint play={isFirstVisit} />}
+            </AnimatePresence>
           </div>
+          <AnimatePresence>
+            {isFirstVisit && (
+              <span
+                className="text-[12px]"
+                style={{ fontFamily: MONO_FONT, color: '#999' }}
+              >
+                Drag the anchors to explore. Your token system updates in real time.
+              </span>
+            )}
+          </AnimatePresence>
+          <ControlPanel />
         </div>
         <div
           className="flex flex-col gap-4 flex-1 min-w-0 overflow-y-auto"
@@ -240,6 +260,8 @@ export default function App() {
             </span>
             <TokenPreview />
           </div>
+
+          <ReadinessChecklist />
 
           <div className="pt-4 flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>

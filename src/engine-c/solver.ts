@@ -37,7 +37,7 @@ export function solve(
   scales: Record<string, ScaleEntry[]>,
   edges: ContrastEdge[],
   intents: IntentMap,
-): OptimizationResult {
+): Omit<OptimizationResult, 'intents'> {
   // Step 1 — Deep copy
   const adjustedScales: Record<string, ScaleEntry[]> = {}
   for (const [name, scale] of Object.entries(scales)) {

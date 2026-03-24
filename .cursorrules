@@ -1,7 +1,7 @@
 ## Design Context
 
 ### Project
-Colour Systems v2 is the foundation for a design tool that helps design engineers build accessible, perceptually uniform colour palettes. The repo contains OKLCH colour theory docs, Poline palette-generation theory, React UI prototypes (Devouring Details), UX frameworks, and Cursor workflow commands. It is not a runnable app — it is a knowledge base and component library that the tool will be built from.
+Colour Systems v2 is an OKLCH-native colour system tool that generates accessible, perceptually uniform palettes through direct manipulation. V1 is shipped — four engines (polar interpolation, scale generation, intent optimization, semantic mapping), spring-physics UI, dark mode, export, and URL sharing are all working. See [V2-PRODUCT.md](planning/V2-PRODUCT.md) for the V2 roadmap.
 
 ### Users
 Design engineers — people who work at the intersection of visual design and code. They expect precision, transparency, and tools that feel as clear as well-written documentation.
@@ -15,13 +15,13 @@ Bold, expressive, creative — but channelled through Vercel/Stripe-level craft.
 - **Colour in UI:** Restrained chrome; the tool's own interface stays mostly neutral so that user-generated palettes are the visual focus
 - **Colour model:** OKLCH-first. All new colour work uses OKLCH. Existing HSL/hex should be migrated over time.
 - **Typography:** DD (custom sans) + JetBrains Mono. system.css defines a rem-based scale from 10px to 64px.
-- **Anti-references:** Ignore any Heron / Fullscript references in cursor commands — those belong to a separate project
+- **Anti-references:** Heron / Fullscript references in `.cursor/commands/` belong to a separate project — ignore them
 
 ### Accessibility
 WCAG AA minimum. The docs already encode perceptual contrast methodology (OKLCH lightness bands, APCA awareness) — the tool should practice what it teaches.
 
 ### Stack
-Vite + React + Tailwind CSS v4 + shadcn/ui for primitives + motion/react (Framer Motion) for spring physics and gestures + Zustand for state. Colour math is a custom OKLCH TypeScript engine — no external colour library. See [BRIEF.md](planning/BRIEF.md) for rationale.
+Vite + React + Tailwind CSS v4 + shadcn/ui for primitives + motion/react (Framer Motion) for spring physics and gestures + Zustand for state. Colour math is a custom OKLCH TypeScript engine — no external colour library. See [V1-BRIEF-shipped.md](planning/V1-BRIEF-shipped.md) for rationale.
 
 ### Design Principles
 1. **Neutral canvas, expressive output** — The tool's chrome is restrained and precise so user-generated palettes take centre stage. Bold expression lives in what the tool produces, not in the tool's own decoration.
