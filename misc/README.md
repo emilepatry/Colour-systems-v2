@@ -1,10 +1,10 @@
 # misc/ — Color system guidelines
 
-Reference guidelines for building accessible, themeable color systems. Each file is a self-contained document (~1k-2k words) structured for fast scanning by AI agents and humans alike.
+Reference guidelines for building accessible, themeable color systems, plus tool analysis docs. Each file is a self-contained document (~1k-2k words) structured for fast scanning by AI agents and humans alike.
 
 ## How to navigate
 
-The files are organised in three groups by domain. Within each group, the reading order moves from foundational concepts to implementation detail.
+The files are organised in four groups by domain. Within each group, the reading order moves from foundational concepts to implementation detail.
 
 ### Color system theory (platform-neutral)
 
@@ -30,6 +30,13 @@ The files are organised in three groups by domain. Within each group, the readin
 | [shadcn-semantic-tokens.md](shadcn-semantic-tokens.md) | shadcn's CSS-variable token system — the bg/foreground convention, full token inventory, light/dark mode, and how to add new semantic tokens. |
 | [tailwind-color-palette.md](tailwind-color-palette.md) | Tailwind's palette families, scale steps, utility generation, opacity modifiers, custom tokens, `@theme inline` bridging, and when to use palette vs semantic tokens. |
 
+### Tool analysis
+
+| File | Scope |
+|---|---|
+| [bairesdev-palette-editing.md](bairesdev-palette-editing.md) | BairesDev Palette App's editing model — swatch entry, H/S/V curve shaping, handle-based interpolation, and contrast checking. |
+| [bairesdev-palette-management.md](bairesdev-palette-management.md) | BairesDev Palette App's palette organisation, import/export, legacy-to-current mapping, and end-to-end workflows. |
+
 ## Document structure
 
 Every file follows the same template:
@@ -48,4 +55,4 @@ Every file follows the same template:
 ## Sources
 ```
 
-Headings are flat (H1 title, H2 sections, H3 rules) with no deep nesting, so keyword search and heading-based chunking work reliably.
+Headings are flat (H1 title, H2 sections, H3 rules) with no deep nesting, so keyword search and heading-based chunking work reliably. Tool analysis files use CAPABILITY / LIMITATION / NOTE labels instead of DO / DON'T, and include an evidence-grade table.
