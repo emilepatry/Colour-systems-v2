@@ -1,45 +1,75 @@
 # Colour Systems v2
 
-Knowledge base and component library for an OKLCH-native colour palette tool. Contains colour theory documentation, Poline palette-generation research, design frameworks, legacy token audits, UI prototypes, and project planning.
+An OKLCH-native colour system tool that generates accessible, perceptually uniform palettes through direct manipulation. Drag anchor points on a colour wheel to materialise complete, WCAG-validated token systems in real time.
 
-This is not a runnable app — it is the foundation a design tool will be built from.
+V1 is shipped. See [V2-PRODUCT.md](planning/V2-PRODUCT.md) for the roadmap.
+
+---
+
+## Quick Start
+
+```bash
+npm install
+npm run dev
+```
+
+---
+
+## Architecture
+
+Three engines run in sequence inside a Zustand store's `computeDerived`:
+
+| Engine | Purpose | Location |
+|---|---|---|
+| **A** | Poline-adapted polar interpolation — draggable anchors, per-axis easing, hue/vibrancy handoff | `src/engine-a/` |
+| **B** | OKLCH scale generation — lightness curve, gamut boundary, chroma strategy, WCAG contrast validation | `src/colour-math/` |
+| **C** | Intent optimizer — intent classification, interaction graph, constraint solver, drift budgets, infeasibility reporting | `src/engine-c/` |
+
+Light and dark pipelines run in parallel. Export produces CSS custom properties and JSON.
 
 ---
 
 ## Directory Map
 
+### `src/`
+
+Application source. Components, engines, colour math, state management, hooks, and utilities.
+
 ### `docs/`
 
-OKLCH colour theory library covering the colour model, contrast compliance, gamut mapping, scale design, generation algorithms, and token intent. Seven files numbered `00` through `06`, with a keyword-routing [index](docs/00-index.md) and glossary. Start here for any colour science question.
+OKLCH colour theory library — colour model, contrast compliance, gamut mapping, scale design, generation algorithms, and token intent. Seven files numbered `00`–`06` with a keyword-routing [index](docs/00-index.md).
 
-### `poline/`
+### `misc/`
 
-Reverse-engineered documentation of the [Poline](https://meodai.github.io/poline/) palette generator. `THEORY.md` covers the polar coordinate model, interpolation engine, easing functions, and the `Poline` class API. `VISUALIZATION.md` covers the picker web component — CSS wheel rendering, SVG layers, drag interaction, and events. Reference material for how an existing colour tool works and visualises interpolation.
-
-### `planning/`
-
-Product and engineering specs for the Colour System Visualizer — what we are building. `BRIEF.md` defines the vision, three-engine architecture, UX, and phased delivery. `BRIEF-INTENT-OPTIMIZER.md` details the constraint solver's intent taxonomy, drift budgets, and infeasibility reporting. `OKLCH-COORDINATE-MAPPING.md` and `OKLCH-COORDINATE-RENDERING.md` spec the adaptation of Poline's coordinate system to OKLCH. `engine-coherence-model.md` defines the Engine A / Engine B handoff contract and state ownership.
+Source-of-truth design system docs referenced by [V2-PRODUCT.md](planning/V2-PRODUCT.md) — token architecture, shadcn semantic tokens, surface/text colour rules, dark mode strategy, component state colours, and the production readiness checklist. Also includes Apple colour system docs for future iOS export (Phase 8).
 
 ### `frameworks/`
 
-Design thinking frameworks for structured solutioning. Covers behavioural psychology (`Psych-BIAS`), motivation/ability/prompt analysis (`Behavior-MAP`), journey mapping, six-panel story narratives (`6P-Story`), stakeholder communication and ethics, and onboarding (split across principles, models, and tactics). These frameworks inform how the tool's UX is designed and evaluated.
+UX design frameworks referenced by V2 — psychological biases, onboarding principles, journey mapping, and six-panel story narratives.
 
-### `legacy tokens/`
+### `planning/`
 
-Audit of the DS5 / Heron colour token system — the starting point we are migrating away from. `CORE_COLOUR_TOKENS.md` maps 34 Figma theme tokens to their codebase equivalents with match/mismatch status. `EXTENDED_COLOUR_TOKENS.md` and `EXTENDED_COMPONENT_TOKENS.md` catalogue the remaining DS5 tokens (semantic, accent, component, effect, brand). These files are historical reference, not OKLCH-native.
+- [V2-PRODUCT.md](planning/V2-PRODUCT.md) — V2 roadmap: Engine D (semantic mapper), export pipeline upgrade, token preview, UX polish, deployment.
+- [BRIEF.md](planning/BRIEF.md) — Original product brief: vision, three-engine architecture, UX, and phased delivery.
 
-### `components/`
+### `_archive/`
 
-Twenty component prototypes from [Devouring Details](https://buildui.com/) (Rauno Freiberg). Each folder is a self-contained React + Framer Motion bundle with `source.tsx`, `system.css`, shared fonts, and a boilerplate `README.md`. These are interaction-pattern references for the build phase — spring physics, gesture hints, rubber banding, interpolation, morph surfaces, and more. They are not colour-system components.
+Legacy reference material preserved for context. Not required for active development.
 
-### `.cursor/commands/`
-
-Cursor workflow commands for design review, code polish, accessibility audits, animation, and other development tasks. Used during the build phase.
+- `components/` — Devouring Details interaction prototypes (Rauno Freiberg). Spring physics, gesture hints, rubber banding, and other patterns referenced during the v1 build.
+- `legacy-tokens/` — DS5/Heron colour token audit. Historical reference, not OKLCH-native.
+- `poline/` — Reverse-engineered Poline documentation. Engine A was built from this research.
+- `planning/` — V1 planning docs (intent optimizer spec, dark mode, coordinate mapping/rendering, test spec, engine coherence model). All implemented.
+- `misc/` — External reference articles (BairesDev palette guides, Tailwind palette notes).
+- `frameworks/` — Additional UX frameworks not directly referenced by V2 (Behavior-MAP, Communication, Onboarding Models/Tactics).
 
 ---
 
+## Stack
+
+Vite + React + Tailwind CSS v4 + shadcn/ui + motion/react (Framer Motion) + Zustand. Colour math is a custom OKLCH TypeScript engine — no external colour library.
+
 ## Conventions
 
-- **OKLCH-first.** All new colour work uses OKLCH. Existing HSL/hex values are migrated over time.
-- **1k–3k words per file.** Markdown files are kept within this range to stay LLM-friendly (~1k–4k tokens).
+- **OKLCH-first.** All colour work uses OKLCH. No HSL/hex in new code.
 - **`.cursorrules`** at the repo root provides AI context: project description, design principles, aesthetic direction, and accessibility requirements.
