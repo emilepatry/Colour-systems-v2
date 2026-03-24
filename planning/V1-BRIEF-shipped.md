@@ -1,5 +1,7 @@
 # Colour System Visualizer — Product & Engineering Brief
 
+> **Archived.** This is the V1 product brief, preserved for historical context. Many internal links reference files that were removed during the V2 reorganization (poline/, components/, planning docs). See [V2-PRODUCT.md](V2-PRODUCT.md) for the current roadmap.
+
 An ultra-minimalist, toy-like web tool that helps designers build beautiful, accessible colour token systems through direct manipulation.
 
 ---

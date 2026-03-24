@@ -17,15 +17,16 @@ npm run dev
 
 ## Architecture
 
-Three engines run in sequence inside a Zustand store's `computeDerived`:
+Four engines run in sequence inside a Zustand store's `computeDerived`:
 
 | Engine | Purpose | Location |
 |---|---|---|
 | **A** | Poline-adapted polar interpolation — draggable anchors, per-axis easing, hue/vibrancy handoff | `src/engine-a/` |
 | **B** | OKLCH scale generation — lightness curve, gamut boundary, chroma strategy, WCAG contrast validation | `src/colour-math/` |
 | **C** | Intent optimizer — intent classification, interaction graph, constraint solver, drift budgets, infeasibility reporting | `src/engine-c/` |
+| **D** | Semantic mapper — intent-driven role assignment, status hue synthesis, contrast verification, component tokens | `src/engine-d/` |
 
-Light and dark pipelines run in parallel. Export produces CSS custom properties and JSON.
+Light and dark pipelines run in parallel. Export produces shadcn CSS, Tailwind palette scales, and 3-layer design token JSON.
 
 ---
 
@@ -33,7 +34,7 @@ Light and dark pipelines run in parallel. Export produces CSS custom properties 
 
 ### `src/`
 
-Application source. Components, engines, colour math, state management, hooks, and utilities.
+Application source. Components, four engines (A–D), colour math, state management, hooks, and utilities.
 
 ### `docs/`
 
@@ -41,7 +42,7 @@ OKLCH colour theory library — colour model, contrast compliance, gamut mapping
 
 ### `misc/`
 
-Source-of-truth design system docs referenced by [V2-PRODUCT.md](planning/V2-PRODUCT.md) — token architecture, shadcn semantic tokens, surface/text colour rules, dark mode strategy, component state colours, and the production readiness checklist. Also includes Apple colour system docs for future iOS export (Phase 8).
+Source-of-truth design system docs referenced by [V2-PRODUCT.md](planning/V2-PRODUCT.md) — token architecture, shadcn semantic tokens, surface/text colour rules, dark mode strategy, component state colours, the production readiness checklist, and shadcn/Tailwind v4 validation research. Also includes Apple colour system docs for future iOS export (Phase 8).
 
 ### `frameworks/`
 
@@ -50,18 +51,7 @@ UX design frameworks referenced by V2 — psychological biases, onboarding princ
 ### `planning/`
 
 - [V2-PRODUCT.md](planning/V2-PRODUCT.md) — V2 roadmap: Engine D (semantic mapper), export pipeline upgrade, token preview, UX polish, deployment.
-- [BRIEF.md](planning/BRIEF.md) — Original product brief: vision, three-engine architecture, UX, and phased delivery.
-
-### `_archive/`
-
-Legacy reference material preserved for context. Not required for active development.
-
-- `components/` — Devouring Details interaction prototypes (Rauno Freiberg). Spring physics, gesture hints, rubber banding, and other patterns referenced during the v1 build.
-- `legacy-tokens/` — DS5/Heron colour token audit. Historical reference, not OKLCH-native.
-- `poline/` — Reverse-engineered Poline documentation. Engine A was built from this research.
-- `planning/` — V1 planning docs (intent optimizer spec, dark mode, coordinate mapping/rendering, test spec, engine coherence model). All implemented.
-- `misc/` — External reference articles (BairesDev palette guides, Tailwind palette notes).
-- `frameworks/` — Additional UX frameworks not directly referenced by V2 (Behavior-MAP, Communication, Onboarding Models/Tactics).
+- [V1-BRIEF-shipped.md](planning/V1-BRIEF-shipped.md) — Original product brief: vision, three-engine architecture, UX, and phased delivery (historical — internal links are not maintained).
 
 ---
 

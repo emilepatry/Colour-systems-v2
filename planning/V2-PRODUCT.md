@@ -6,7 +6,7 @@
 
 ## The Gap
 
-V1 produces raw palette scales (layer 1). V2 bridges to semantic roles (layer 2) — purpose-based tokens like `background.canvas`, `text.primary`, `accent.primary`, `status.error` — and outputs a complete token set that plugs directly into shadcn/Tailwind. Layer 3 (component tokens) is deferred to Phase 7.
+V1 produces raw palette scales (layer 1). V2 bridges to semantic roles (layer 2) — purpose-based tokens like `background.canvas`, `text.primary`, `accent.primary`, `status.error` — and outputs a complete token set that plugs directly into shadcn/Tailwind. Layer 3 (component tokens) is implemented in Phase 7.
 
 The three-layer model from [misc/color-token-architecture.md](../misc/color-token-architecture.md):
 
@@ -14,7 +14,7 @@ The three-layer model from [misc/color-token-architecture.md](../misc/color-toke
 |---|---|---|
 | 1. Reference palette | Raw colour inventory | Built |
 | 2. Semantic roles | Purpose-based tokens | **V2 target** |
-| 3. Component tokens | Executable UI | Phase 7 |
+| 3. Component tokens | Executable UI | **Phase 7 — started** |
 
 ---
 
@@ -58,15 +58,17 @@ flowchart LR
 
 ## Sub-Projects
 
-V2 is split into three phased sub-projects. Each is a self-contained brief with its own spec, tests, and acceptance criteria.
+V2 is split into four phased sub-projects. Each is a self-contained brief with its own spec, tests, and acceptance criteria.
 
 ```mermaid
 flowchart LR
     phaseA["Phase A\nEngine D"]
     phaseB["Phase B\nExport + Preview"]
     phaseC["Phase C\nUX + Ship"]
+    phase7["Phase 7\nComponent Tokens"]
     phaseA -->|"produces SemanticTokenSet"| phaseB
     phaseB -->|"export + preview working"| phaseC
+    phaseC -->|"foundation roles live"| phase7
 ```
 
 | Phase | File | Scope |
@@ -74,12 +76,13 @@ flowchart LR
 | A | [V2-ENGINE-D.md](V2-ENGINE-D.md) | Semantic mapper engine — intent-driven mapping rules, status hue synthesis, store integration, Engine D tests |
 | B | [V2-EXPORT-PREVIEW.md](V2-EXPORT-PREVIEW.md) | Export pipeline (shadcn, Tailwind, JSON) + multi-surface token preview + export tests |
 | C | [V2-UX-SHIP.md](V2-UX-SHIP.md) | Progressive disclosure, production readiness checklist, deployment to Vercel |
+| 7 | `src/engine-d/component-tokens.ts` | Component token derivation — button, input, nav states derived from foundation roles via offset rules |
 
 ---
 
 ## Future Phases
 
-### Phase 7 — Component Tokens
+### Phase 7 — Component Tokens *(implementation started — see `src/engine-d/component-tokens.ts`)*
 
 Define concrete offset rules for deriving component tokens from foundation roles:
 
