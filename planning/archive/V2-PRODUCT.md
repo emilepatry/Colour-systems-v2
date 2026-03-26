@@ -1,5 +1,7 @@
 # V2 Product Plan — From Palette Tool to Colour System Product
 
+> **Archived.** Phases A–C are shipped. The active planning doc is [V2-UX-OVERHAUL.md](../V2-UX-OVERHAUL.md) (Phase D — UX overhaul, onboarding, and input model expansion).
+
 > Turn the v1 palette engine into a shippable product that outputs production-ready token libraries immediately usable in shadcn/Tailwind projects, with a multi-surface preview, UX polish, and static deployment.
 
 ---

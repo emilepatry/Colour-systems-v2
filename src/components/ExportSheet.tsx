@@ -17,8 +17,7 @@ import {
 } from '@/components/ui/sheet'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-
-const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
+import { MONO_FONT } from '@/styles/tokens'
 
 type TabId = 'shadcn' | 'tailwind' | 'css' | 'json'
 

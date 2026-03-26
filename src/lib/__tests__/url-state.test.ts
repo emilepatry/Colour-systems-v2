@@ -18,6 +18,7 @@ const defaultSource: SourceState = {
   globalVibrancy: 1.0,
   activeMode: 'light',
   darkCurveOverrides: {},
+  baseHex: null,
 }
 
 describe('encodeState / decodeState', () => {
@@ -171,9 +172,53 @@ describe('URL length budget', () => {
       darkCurveOverrides: Object.fromEntries(
         Array.from({ length: 10 }, (_, i) => [i, 0.9 - i * 0.08]),
       ),
+      baseHex: '#4F46E5',
     }
     const encoded = encodeState(maximal)
     expect(encoded.length).toBeLessThan(2000)
+  })
+})
+
+describe('baseHex URL state', () => {
+  test('round-trip with baseHex set', () => {
+    const source: SourceState = { ...defaultSource, baseHex: '#4F46E5' }
+    const decoded = decodeState('#' + encodeState(source))
+    expect(decoded).toEqual(source)
+  })
+
+  test('round-trip with baseHex null', () => {
+    const decoded = decodeState('#' + encodeState(defaultSource))
+    expect(decoded).toEqual(defaultSource)
+    expect(decoded!.baseHex).toBeNull()
+  })
+
+  test('v1 URL without baseHex field decodes with baseHex defaulting to null', () => {
+    const legacyPayload = {
+      v: 1,
+      s: {
+        anchors: [{ H: 25, C: 0.15 }, { H: 265, C: 0.15 }],
+        easing: { x: 'sinusoidal', y: 'sinusoidal' },
+        numHues: 5,
+        lightnessCurve: [0.97, 0.93, 0.87, 0.78, 0.68, 0.56, 0.45, 0.36, 0.27, 0.17],
+        displayL: 0.56,
+        chromaStrategy: 'max_per_hue',
+        compliance: 'AA',
+        neutralHue: null,
+        globalVibrancy: 1.0,
+        activeMode: 'light',
+        darkCurveOverrides: {},
+      },
+    }
+    const encoded = btoa(JSON.stringify(legacyPayload))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const decoded = decodeState('#' + encoded)
+    expect(decoded).not.toBeNull()
+    expect(decoded!.baseHex).toBeNull()
+  })
+
+  test('rejects invalid baseHex string', () => {
+    const bad = { ...defaultSource, baseHex: 'notahex' }
+    expect(decodeState('#' + btoa(JSON.stringify({ v: 1, s: bad })))).toBeNull()
   })
 })
 

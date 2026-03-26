@@ -3,8 +3,7 @@ import { motion, useSpring, useReducedMotion } from 'motion/react'
 import { usePaletteStore, useTemporalStore } from '@/store'
 import { clampCurvePoint } from '@/lib/lightness-curve'
 import { Button } from '@/components/ui/button'
-
-const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
+import { MONO_FONT } from '@/styles/tokens'
 
 const VIEW_W = 240
 const VIEW_H = 140

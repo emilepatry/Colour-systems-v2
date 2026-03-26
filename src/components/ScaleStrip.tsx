@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useActivePalette } from '@/hooks/useActivePalette'
 import { wcagContrastRatio } from '@/colour-math'
-
-const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
+import { MONO_FONT } from '@/styles/tokens'
 const BADGE_PASS_BG = 'oklch(0.92 0 0)'
 const BADGE_PASS_FG = '#666'
 const BADGE_FAIL_BG = 'oklch(0.75 0.05 70)'

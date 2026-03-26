@@ -47,6 +47,7 @@ export default function ColourWheel() {
   const darkGamutBoundary = usePaletteStore((s) => s.darkGamutBoundary)
   const moveAnchor = usePaletteStore((s) => s.moveAnchor)
   const setActiveAnchorIndex = usePaletteStore((s) => s.setActiveAnchorIndex)
+  const isAnchorLocked = usePaletteStore((s) => s.isAnchorLocked)
   const temporal = useTemporalStore()
 
   const effectiveDisplayL = activeMode === 'light' ? displayL : darkDisplayL
@@ -127,6 +128,7 @@ export default function ColourWheel() {
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, index: number) => {
+      if (isAnchorLocked(index)) return
       e.stopPropagation()
       setDraggingIndex(index)
       setActiveAnchorIndex(index)
@@ -139,7 +141,7 @@ export default function ColourWheel() {
         springY.jump(pos.svgY)
       }
     },
-    [setActiveAnchorIndex, temporal, anchorPositions, springX, springY],
+    [isAnchorLocked, setActiveAnchorIndex, temporal, anchorPositions, springX, springY],
   )
 
   const handlePointerMove = useCallback(
@@ -165,6 +167,7 @@ export default function ColourWheel() {
 
   const handleAnchorKeyDown = useCallback(
     (e: React.KeyboardEvent, index: number) => {
+      if (isAnchorLocked(index)) return
       const anchor = anchors[index]
       const step = e.shiftKey ? 10 : 1
       let H = anchor.H
@@ -190,7 +193,7 @@ export default function ColourWheel() {
       e.preventDefault()
       moveAnchor(index, H, C)
     },
-    [anchors, displayL, moveAnchor],
+    [isAnchorLocked, anchors, displayL, moveAnchor],
   )
 
   return (
@@ -233,39 +236,51 @@ export default function ColourWheel() {
           <circle key={dot.key} cx={dot.svgX} cy={dot.svgY} r={1.5} fill={dot.fill} />
         ))}
 
-        {anchorPositions.map((pos, i) => (
-          <g
-            key={i}
-            tabIndex={0}
-            role="slider"
-            aria-label={`Anchor ${i + 1}: hue ${Math.round(anchors[i].H)}°, chroma ${anchors[i].C.toFixed(3)}`}
-            aria-valuemin={0}
-            aria-valuemax={360}
-            aria-valuenow={Math.round(anchors[i].H)}
-            onKeyDown={(e) => handleAnchorKeyDown(e, i)}
-            className="group"
-          >
-            <motion.circle
-              cx={draggingIndex === i ? springX : pos.svgX}
-              cy={draggingIndex === i ? springY : pos.svgY}
-              r={3}
-              fill="white"
-              stroke="rgba(0,0,0,0.3)"
-              strokeWidth={0.5}
-              style={{ cursor: draggingIndex !== null ? 'grabbing' : 'grab' }}
-              onPointerDown={(e) => handlePointerDown(e, i)}
-            />
-            <circle
-              cx={pos.svgX}
-              cy={pos.svgY}
-              r={5}
-              fill="none"
-              stroke="oklch(0.55 0.15 265)"
-              strokeWidth={1}
-              className="opacity-0 group-focus-visible:opacity-100"
-            />
-          </g>
-        ))}
+        {anchorPositions.map((pos, i) => {
+          const locked = isAnchorLocked(i)
+          return (
+            <g
+              key={i}
+              tabIndex={locked ? -1 : 0}
+              role="slider"
+              aria-label={`Anchor ${i + 1}: hue ${Math.round(anchors[i].H)}°, chroma ${anchors[i].C.toFixed(3)}${locked ? ' (locked)' : ''}`}
+              aria-valuemin={0}
+              aria-valuemax={360}
+              aria-valuenow={Math.round(anchors[i].H)}
+              aria-disabled={locked || undefined}
+              onKeyDown={(e) => handleAnchorKeyDown(e, i)}
+              className="group"
+            >
+              <motion.circle
+                cx={draggingIndex === i ? springX : pos.svgX}
+                cy={draggingIndex === i ? springY : pos.svgY}
+                r={3}
+                fill="white"
+                stroke={locked ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)'}
+                strokeWidth={locked ? 0.8 : 0.5}
+                style={{ cursor: locked ? 'default' : draggingIndex !== null ? 'grabbing' : 'grab' }}
+                onPointerDown={(e) => handlePointerDown(e, i)}
+              />
+              {locked && (
+                <g transform={`translate(${pos.svgX - 2}, ${pos.svgY - 7})`}>
+                  <rect x={0.5} y={2} width={3} height={2.5} rx={0.3}
+                    fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={0.4} />
+                  <path d="M1 2V1.2A1 1 0 0 1 3 1.2V2"
+                    fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={0.4} strokeLinecap="round" />
+                </g>
+              )}
+              <circle
+                cx={pos.svgX}
+                cy={pos.svgY}
+                r={5}
+                fill="none"
+                stroke="oklch(0.55 0.15 265)"
+                strokeWidth={1}
+                className="opacity-0 group-focus-visible:opacity-100"
+              />
+            </g>
+          )
+        })}
       </svg>
     </div>
   )

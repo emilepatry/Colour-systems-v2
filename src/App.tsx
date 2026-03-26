@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { usePaletteStore, extractSource } from '@/store'
-import { useActivePalette } from '@/hooks/useActivePalette'
-import { encodeState } from '@/lib/url-state'
+import { usePaletteStore } from '@/store'
 import { handleGlobalKeyDown } from '@/lib/keyboard-handler'
 import { AnimatePresence } from 'motion/react'
 import ColourWheel from '@/components/ColourWheel'
 import ControlPanel from '@/components/ControlPanel'
 import GestureHint, { useFirstVisit } from '@/components/GestureHint'
-import ScaleStrip from '@/components/ScaleStrip'
-import TokenPreview from '@/components/TokenPreview'
-import ExportSheet from '@/components/ExportSheet'
-import InfeasibilitySummary from '@/components/InfeasibilitySummary'
-import ReadinessChecklist from '@/components/ReadinessChecklist'
-import { Button } from '@/components/ui/button'
+import ResultsPanel from '@/components/ResultsPanel'
+import HowItWorks from '@/components/HowItWorks'
+import BaseHexInput from '@/components/BaseHexInput'
+import PresetSelector from '@/components/PresetSelector'
+import { MONO_FONT } from '@/styles/tokens'
 
-const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
+type View = 'tool' | 'how-it-works'
 
 const SHORTCUT_SECTIONS = [
   {
@@ -129,36 +126,32 @@ function ShortcutOverlay({ onClose }: { onClose: () => void }) {
 }
 
 export default function App() {
-  const { palette } = useActivePalette()
   const { isFirstVisit, dismiss: dismissFirstVisit } = useFirstVisit()
-  const [exportOpen, setExportOpen] = useState(false)
-  const [linkCopied, setLinkCopied] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [view, setView] = useState<View>('tool')
 
   const showShortcutsRef = useRef(showShortcuts)
   showShortcutsRef.current = showShortcuts
 
-  const setExportOpenRef = useRef(setExportOpen)
-  setExportOpenRef.current = setExportOpen
-
-  const handleCopyLink = () => {
-    const source = extractSource(usePaletteStore.getState())
-    const hash = '#' + encodeState(source)
-    window.history.replaceState(null, '', hash)
-    try {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        setLinkCopied(true)
-        setTimeout(() => setLinkCopied(false), 1500)
-      })
-    } catch {
-      // Clipboard API unavailable in insecure contexts
-    }
-  }
+  const viewRef = useRef(view)
+  viewRef.current = view
 
   const handleCloseShortcuts = useCallback(() => setShowShortcuts(false), [])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (viewRef.current !== 'tool') {
+        if (e.altKey || (e.metaKey || e.ctrlKey)) return
+        if (e.key === '?') {
+          e.preventDefault()
+          setShowShortcuts((p) => !p)
+        } else if (e.key === 'Escape' && showShortcutsRef.current) {
+          e.preventDefault()
+          setShowShortcuts(false)
+        }
+        return
+      }
+
       handleGlobalKeyDown(e, {
         undo: () => usePaletteStore.temporal.getState().undo(),
         redo: () => usePaletteStore.temporal.getState().redo(),
@@ -175,7 +168,7 @@ export default function App() {
         setActiveMode: (m) => usePaletteStore.getState().setActiveMode(m),
         setChromaStrategy: (s) => usePaletteStore.getState().setChromaStrategy(s),
         setCompliance: (c) => usePaletteStore.getState().setCompliance(c),
-        openExport: () => setExportOpenRef.current(true),
+        openExport: () => usePaletteStore.getState().setExportOpen(true),
         isShortcutsOpen: showShortcutsRef.current,
         toggleShortcuts: () => setShowShortcuts((p) => !p),
         closeShortcuts: () => setShowShortcuts(false),
@@ -186,95 +179,56 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  const scaleKeys = palette
-    ? Object.keys(palette.scales).filter((k) => k !== 'neutral')
-    : []
-
   return (
     <main className="min-h-screen flex flex-col items-center p-8">
-      <header className="w-full max-w-[1200px] mb-12">
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: '#1a1a1a' }}>
+      <nav aria-label="Main" className="w-full max-w-[1200px] mb-12 flex items-baseline gap-6">
+        <button
+          onClick={() => setView('tool')}
+          aria-current={view === 'tool' ? 'page' : undefined}
+          className="text-2xl font-semibold tracking-tight bg-transparent border-0 p-0 cursor-pointer"
+          style={{ fontFamily: MONO_FONT, color: view === 'tool' ? '#1a1a1a' : '#999' }}
+        >
           Colour Systems
-        </h1>
-        <p
-          className="text-[13px] mt-1"
-          style={{ fontFamily: MONO_FONT, color: '#999' }}
+        </button>
+        <button
+          onClick={() => setView('how-it-works')}
+          aria-current={view === 'how-it-works' ? 'page' : undefined}
+          className="text-[13px] bg-transparent border-0 p-0 cursor-pointer transition-colors"
+          style={{ fontFamily: MONO_FONT, color: view === 'how-it-works' ? '#1a1a1a' : '#999' }}
         >
-          OKLCH-native colour system generator with real-time token preview
-        </p>
-      </header>
-      <div className="flex flex-col md:flex-row items-start gap-12 w-full max-w-[1200px]">
-        <div className="w-full md:w-[450px] shrink-0 flex flex-col gap-8">
-          <div className="relative" onPointerDown={() => { if (isFirstVisit) dismissFirstVisit() }}>
-            <ColourWheel />
+          How it works
+        </button>
+      </nav>
+
+      {view === 'tool' ? (
+        <div className="flex flex-col md:flex-row items-start gap-12 w-full max-w-[1200px]">
+          <div className="w-full md:w-[450px] shrink-0 flex flex-col gap-8">
+            <BaseHexInput />
+            <PresetSelector />
+            <div className="relative" onPointerDown={() => { if (isFirstVisit) dismissFirstVisit() }}>
+              <ColourWheel />
+              <AnimatePresence>
+                {isFirstVisit && <GestureHint play={isFirstVisit} />}
+              </AnimatePresence>
+            </div>
             <AnimatePresence>
-              {isFirstVisit && <GestureHint play={isFirstVisit} />}
+              {isFirstVisit && (
+                <span
+                  className="text-[12px]"
+                  style={{ fontFamily: MONO_FONT, color: '#999' }}
+                >
+                  Drag the anchors to explore. Your token system updates in real time.
+                </span>
+              )}
             </AnimatePresence>
+            <ControlPanel />
           </div>
-          <AnimatePresence>
-            {isFirstVisit && (
-              <span
-                className="text-[12px]"
-                style={{ fontFamily: MONO_FONT, color: '#999' }}
-              >
-                Drag the anchors to explore. Your token system updates in real time.
-              </span>
-            )}
-          </AnimatePresence>
-          <ControlPanel />
+          <ResultsPanel />
         </div>
-        <div
-          className="flex flex-col gap-4 flex-1 min-w-0 overflow-y-auto"
-          style={{ maxHeight: 'calc(100vh - 4rem)' }}
-        >
-          {scaleKeys.map((key, i) => (
-            <div key={key} className="flex flex-col gap-1">
-              <span
-                className="text-[11px]"
-                style={{ fontFamily: MONO_FONT, color: '#999' }}
-              >
-                Hue {i + 1}
-              </span>
-              <ScaleStrip hueName={key} />
-            </div>
-          ))}
-          {palette?.scales.neutral && (
-            <div className="flex flex-col gap-1">
-              <span
-                className="text-[11px]"
-                style={{ fontFamily: MONO_FONT, color: '#999' }}
-              >
-                Neutral
-              </span>
-              <ScaleStrip hueName="neutral" />
-            </div>
-          )}
+      ) : (
+        <HowItWorks />
+      )}
 
-          <InfeasibilitySummary />
-          <div className="flex flex-col gap-1 pt-4 border-t border-[#eee]">
-            <span
-              className="text-[11px]"
-              style={{ fontFamily: MONO_FONT, color: '#999' }}
-            >
-              Preview
-            </span>
-            <TokenPreview />
-          </div>
-
-          <ReadinessChecklist />
-
-          <div className="pt-4 flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-              Export Tokens
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleCopyLink}>
-              {linkCopied ? 'Copied!' : 'Copy Link'}
-            </Button>
-          </div>
-
-          <ExportSheet open={exportOpen} onOpenChange={setExportOpen} />
-        </div>
-      </div>
       {showShortcuts && <ShortcutOverlay onClose={handleCloseShortcuts} />}
     </main>
   )

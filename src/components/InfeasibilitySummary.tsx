@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useActivePalette } from '@/hooks/useActivePalette'
 import type { InfeasibilityReport } from '@/engine-c'
-
-const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
+import { MONO_FONT, BLURB_STYLE } from '@/styles/tokens'
 
 const BLOCKER_TEXT: Record<InfeasibilityReport['blocker'], string> = {
   anchor_freeze: 'both frozen',
@@ -26,13 +25,21 @@ export default function InfeasibilitySummary() {
       : `\u2713 ${adjustmentCount} token${adjustmentCount === 1 ? '' : 's'} adjusted`
 
     return (
-      <div className="py-2">
+      <div className="py-2 flex flex-col gap-1">
         <span
           className="text-[11px]"
           style={{ fontFamily: MONO_FONT, color: '#999' }}
         >
           {label}
         </span>
+        {adjustmentCount > 0 && (
+          <p style={BLURB_STYLE}>
+            The optimizer adjusted {adjustmentCount} token
+            {adjustmentCount === 1 ? '' : 's'} to meet your compliance target.
+            This is normal — it means your chosen hues needed slight lightness
+            shifts to guarantee accessible contrast.
+          </p>
+        )}
       </div>
     )
   }

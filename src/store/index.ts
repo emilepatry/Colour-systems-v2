@@ -8,12 +8,15 @@ import {
   oklchToHex,
   relativeLuminance,
   assemblePalette,
+  isValidHex6,
+  srgbToOklch,
   type ScaleEntry,
   type PaletteOutput,
 } from '@/colour-math'
 import { runEngineC, type OptimizationResult } from '@/engine-c'
 import { mapSemanticTokens, deriveComponentTokens, type SemanticTokenSet, type ComponentTokenSet } from '@/engine-d'
 import { resolveDarkCurve } from '@/lib/dark-curve'
+import type { PalettePreset } from '@/lib/presets'
 
 // ─── Source State (undo boundary) ────────────────────────────────────
 
@@ -29,6 +32,7 @@ export interface SourceState {
   globalVibrancy: number
   activeMode: 'light' | 'dark'
   darkCurveOverrides: Record<number, number>
+  baseHex: string | null
 }
 
 // ─── Derived State ───────────────────────────────────────────────────
@@ -52,7 +56,13 @@ interface DerivedState {
 
 // ─── Full Store ──────────────────────────────────────────────────────
 
-interface PaletteStore extends SourceState, DerivedState {
+// ─── UI State (not undoable) ──────────────────────────────────────────
+
+interface UIState {
+  exportOpen: boolean
+}
+
+interface PaletteStore extends SourceState, DerivedState, UIState {
   moveAnchor: (index: number, H: number, C: number) => void
   addAnchor: (H: number, C: number) => void
   removeAnchor: (index: number) => void
@@ -67,6 +77,10 @@ interface PaletteStore extends SourceState, DerivedState {
   setActiveMode: (mode: 'light' | 'dark') => void
   setDarkCurveOverride: (level: number, L: number, skipCrossValidation?: boolean) => void
   clearDarkCurveOverrides: () => void
+  setExportOpen: (open: boolean) => void
+  setBaseHex: (hex: string | null) => void
+  isAnchorLocked: (index: number) => boolean
+  applyPreset: (preset: PalettePreset) => void
 }
 
 // ─── Derivation Pipeline ─────────────────────────────────────────────
@@ -132,8 +146,9 @@ function safeMapSemanticTokens(
   result: OptimizationResult,
   mode: 'light' | 'dark',
   globalVibrancy: number,
+  compliance: 'AA' | 'AAA',
 ): SemanticTokenSet | null {
-  try { return mapSemanticTokens(result, mode, globalVibrancy) } catch { return null }
+  try { return mapSemanticTokens(result, mode, globalVibrancy, compliance) } catch { return null }
 }
 
 function safeDeriveComponentTokens(
@@ -171,7 +186,7 @@ function computeDerived(
     : null
 
   const semanticTokens = optimization
-    ? safeMapSemanticTokens(optimization, 'light', source.globalVibrancy)
+    ? safeMapSemanticTokens(optimization, 'light', source.globalVibrancy, source.compliance)
     : null
 
   const componentTokens = semanticTokens
@@ -206,7 +221,7 @@ function computeDerived(
     : null
 
   const darkSemanticTokens = darkOptimization
-    ? safeMapSemanticTokens(darkOptimization, 'dark', source.globalVibrancy)
+    ? safeMapSemanticTokens(darkOptimization, 'dark', source.globalVibrancy, source.compliance)
     : null
 
   const darkComponentTokens = darkSemanticTokens
@@ -244,6 +259,7 @@ const defaultSource: SourceState = {
   globalVibrancy: 1.0,
   activeMode: 'light',
   darkCurveOverrides: {},
+  baseHex: null,
 }
 
 const initialDerived = computeDerived(defaultSource)
@@ -273,6 +289,7 @@ export function extractSource(state: PaletteStore): SourceState {
     globalVibrancy: state.globalVibrancy,
     activeMode: state.activeMode,
     darkCurveOverrides: state.darkCurveOverrides,
+    baseHex: state.baseHex,
   }
 }
 
@@ -295,6 +312,9 @@ export const usePaletteStore = create<PaletteStore>()(
       ...initialDerived,
       activeAnchorIndex: null,
 
+      // UI state (not undoable)
+      exportOpen: false,
+
       // Actions
       moveAnchor: (index, H, C) => {
         const anchors = [...get().anchors]
@@ -310,6 +330,7 @@ export const usePaletteStore = create<PaletteStore>()(
       },
 
       removeAnchor: (index) => {
+        if (get().baseHex !== null && index === 0) return
         const anchors = get().anchors.filter((_, i) => i !== index)
         if (anchors.length < 2) return
         applyAndDerive(set, get, { anchors })
@@ -364,6 +385,51 @@ export const usePaletteStore = create<PaletteStore>()(
 
       clearDarkCurveOverrides: () => {
         applyAndDerive(set, get, { darkCurveOverrides: {} })
+      },
+
+      setExportOpen: (open) => {
+        set({ exportOpen: open })
+      },
+
+      setBaseHex: (hex) => {
+        if (hex === null) {
+          applyAndDerive(set, get, { baseHex: null })
+          return
+        }
+        if (!isValidHex6(hex)) return
+        const normalized = hex.startsWith('#') ? hex : `#${hex}`
+        const { H, C } = srgbToOklch(normalized)
+        const anchors = [...get().anchors]
+        anchors[0] = { H, C }
+        applyAndDerive(set, get, { baseHex: normalized.toUpperCase(), anchors })
+      },
+
+      isAnchorLocked: (index) => {
+        return get().baseHex !== null && index === 0
+      },
+
+      applyPreset: (preset) => {
+        const state = get()
+        const baseHex = state.baseHex
+        const baseH = baseHex ? srgbToOklch(baseHex).H : null
+        const config = preset.configure(baseH, state.displayL)
+
+        let anchors = config.anchors
+        if (baseHex) {
+          const { H, C } = srgbToOklch(baseHex)
+          anchors = [{ H, C }, ...anchors.slice(1)]
+        }
+
+        const update: Partial<SourceState> = {
+          anchors,
+          easing: config.easing,
+          numHues: config.numHues,
+          globalVibrancy: config.globalVibrancy,
+        }
+        if (config.compliance) {
+          update.compliance = config.compliance
+        }
+        applyAndDerive(set, get, update)
       },
     }),
     {

@@ -36,12 +36,13 @@ function tokenFromOklch(L: number, C: number, H: number, alpha?: number): Semant
 
 /**
  * Pick the best foreground (light or dark neutral) for a given fill,
- * choosing whichever neutral achieves higher contrast. Verifies 4.5:1.
+ * choosing whichever neutral achieves higher contrast.
  */
 export function calculateForeground(
   fillHex: string,
   fillL: number,
   neutralAnchors: { light: SemanticToken; dark: SemanticToken },
+  contrastThreshold = 4.5,
 ): SemanticToken {
   const preferred = fillL < 0.55 ? neutralAnchors.light : neutralAnchors.dark
   const fallback = fillL < 0.55 ? neutralAnchors.dark : neutralAnchors.light
@@ -49,10 +50,9 @@ export function calculateForeground(
   const prefRatio = wcagContrastRatio(fillHex, preferred.hex)
   const fbRatio = wcagContrastRatio(fillHex, fallback.hex)
 
-  if (prefRatio >= 4.5) return { ...preferred }
-  if (fbRatio >= 4.5) return { ...fallback }
+  if (prefRatio >= contrastThreshold) return { ...preferred }
+  if (fbRatio >= contrastThreshold) return { ...fallback }
 
-  // Neither anchor achieves 4.5:1 — synthesize pure white or black
   const whiteHex = oklchToHex(1, 0, 0)
   const blackHex = oklchToHex(0, 0, 0)
   const whiteRatio = wcagContrastRatio(fillHex, whiteHex)
@@ -61,6 +61,95 @@ export function calculateForeground(
     return { hex: whiteHex, oklch: { L: 1, C: 0, H: 0 } }
   }
   return { hex: blackHex, oklch: { L: 0, C: 0, H: 0 } }
+}
+
+/**
+ * Shift a token's L toward the mode extreme until contrast against all
+ * backgrounds meets the threshold. Returns adjusted token, or null if
+ * already passing. Preserves hue; clamps chroma to gamut at each step.
+ */
+function shiftLForContrast(
+  token: SemanticToken,
+  bgHexes: string[],
+  threshold: number,
+  mode: 'light' | 'dark',
+): SemanticToken | null {
+  if (bgHexes.length === 0) return null
+
+  const meetsAll = (hex: string) =>
+    bgHexes.every(bg => wcagContrastRatio(hex, bg) >= threshold)
+
+  if (meetsAll(token.hex)) return null
+
+  let { L } = token.oklch
+  const { C: originalC, H } = token.oklch
+  const step = mode === 'light' ? -0.01 : 0.01
+
+  for (let i = 0; i < 100; i++) {
+    L = Math.max(0, Math.min(1, L + step))
+    const C = Math.min(originalC, maxChroma(L, H))
+    const hex = oklchToHex(L, C, H)
+    if (meetsAll(hex)) {
+      return { hex, oklch: { L, C, H } }
+    }
+    if (L <= 0 || L >= 1) {
+      return { hex, oklch: { L, C, H } }
+    }
+  }
+
+  const C = Math.min(originalC, maxChroma(L, H))
+  const hex = oklchToHex(L, C, H)
+  return { hex, oklch: { L, C, H } }
+}
+
+function enforceTextContrast(
+  tokens: Record<string, SemanticToken>,
+  compliance: 'AA' | 'AAA',
+  mode: 'light' | 'dark',
+): void {
+  const threshold = compliance === 'AAA' ? 7.0 : 4.5
+  const canvas = tokens['background.canvas']
+  if (!canvas) return
+  const bgHexes = [canvas.hex]
+
+  const textRoles = ['text.primary', 'text.secondary', 'text.tertiary']
+  let prevL: number | null = null
+
+  for (const role of textRoles) {
+    const token = tokens[role]
+    if (!token) { continue }
+
+    const shifted = shiftLForContrast(token, bgHexes, threshold, mode)
+    let final = shifted ?? token
+
+    // Maintain monotonic L ordering: primary.L <= secondary.L <= tertiary.L
+    if (prevL !== null && final.oklch.L < prevL) {
+      const C = Math.min(final.oklch.C, maxChroma(prevL, final.oklch.H))
+      const hex = oklchToHex(prevL, C, final.oklch.H)
+      final = { hex, oklch: { L: prevL, C, H: final.oklch.H } }
+    }
+
+    tokens[role] = final
+    prevL = final.oklch.L
+  }
+}
+
+function enforceFocusRingContrast(
+  tokens: Record<string, SemanticToken>,
+  mode: 'light' | 'dark',
+): void {
+  const ring = tokens['focus.ring']
+  const canvas = tokens['background.canvas']
+  if (!ring || !canvas) return
+
+  const shifted = shiftLForContrast(ring, [canvas.hex], 3, mode)
+  if (!shifted) return
+
+  tokens['focus.ring'] = shifted
+  const outline = tokens['focus.outline']
+  if (outline) {
+    tokens['focus.outline'] = { ...shifted, alpha: outline.alpha }
+  }
 }
 
 // ─── Neutral Scale Mapping ───────────────────────────────────────────
@@ -146,6 +235,7 @@ function mapChromatics(
   scales: Record<string, ScaleEntry[]>,
   intents: IntentMap,
   neutralAnchors: { light: SemanticToken; dark: SemanticToken },
+  contrastThreshold = 4.5,
 ): Record<string, SemanticToken> {
   const tokens: Record<string, SemanticToken> = {}
 
@@ -197,7 +287,7 @@ function mapChromatics(
 
   // Foreground
   tokens['accent.primary-foreground'] = calculateForeground(
-    accentEntry.hex, L, neutralAnchors,
+    accentEntry.hex, L, neutralAnchors, contrastThreshold,
   )
 
   // Accent-subtle: hue-0 at the highest-L surface-intent token's lightness
@@ -302,10 +392,12 @@ export function mapSemanticTokens(
   result: OptimizationResult,
   mode: 'light' | 'dark',
   globalVibrancy: number,
+  compliance: 'AA' | 'AAA' = 'AA',
 ): SemanticTokenSet {
   const { adjustedScales, intents } = result
   const neutralScale = adjustedScales[NEUTRAL_SCALE_NAME]
   const neutralIntents = intents[NEUTRAL_SCALE_NAME]
+  const contrastThreshold = compliance === 'AAA' ? 7.0 : 4.5
 
   const tokens: Record<string, SemanticToken> = {}
 
@@ -321,7 +413,7 @@ export function mapSemanticTokens(
   }
 
   // 2. Chromatic mapping
-  Object.assign(tokens, mapChromatics(adjustedScales, intents, neutralAnchors))
+  Object.assign(tokens, mapChromatics(adjustedScales, intents, neutralAnchors, contrastThreshold))
 
   // 3. Chart tokens
   Object.assign(tokens, mapChartTokens(adjustedScales, intents))
@@ -332,9 +424,13 @@ export function mapSemanticTokens(
   // 5. Status synthesis
   const canvas = tokens['background.canvas'] ?? tokenFromOklch(0.98, 0, 0)
   const { tokens: statusTokens, synthesis } = synthesizeStatusTokens(
-    adjustedScales, intents, mode, globalVibrancy, canvas, neutralAnchors,
+    adjustedScales, intents, mode, globalVibrancy, canvas, neutralAnchors, contrastThreshold,
   )
   Object.assign(tokens, statusTokens)
+
+  // 6. Contrast enforcement
+  enforceTextContrast(tokens, compliance, mode)
+  enforceFocusRingContrast(tokens, mode)
 
   return {
     tokens,
