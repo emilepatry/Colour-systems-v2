@@ -1,5 +1,6 @@
 import type { SourceState } from '@/store'
 import { ALL_EASING_IDS, type EasingId } from '@/engine-a/easing'
+import { isValidHex6 } from '@/colour-math'
 
 interface SharePayload {
   v: 1
@@ -99,6 +100,10 @@ function validateSourceState(s: unknown): s is SourceState {
   )
     return false
 
+  if (o.baseHex !== undefined && o.baseHex !== null) {
+    if (typeof o.baseHex !== 'string' || !isValidHex6(o.baseHex)) return false
+  }
+
   return true
 }
 
@@ -113,7 +118,10 @@ export function decodeState(hash: string): SourceState | null {
     if (!raw) return null
     const payload = JSON.parse(fromBase64Url(raw))
     if (payload?.v !== 1 || !payload?.s) return null
-    return validateSourceState(payload.s) ? (payload.s as SourceState) : null
+    if (!validateSourceState(payload.s)) return null
+    const source = payload.s as SourceState
+    if (source.baseHex === undefined) source.baseHex = null
+    return source
   } catch {
     return null
   }

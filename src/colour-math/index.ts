@@ -20,6 +20,10 @@ export function srgbEncode(c: number): number {
 
 // ─── Hex Utilities ──────────────────────────────────────────────────
 
+export function isValidHex6(hex: string): boolean {
+  return /^#?[0-9a-fA-F]{6}$/.test(hex)
+}
+
 export function hexToRgb(hex: string): [number, number, number] {
   const h = hex.startsWith('#') ? hex.slice(1) : hex
   return [
