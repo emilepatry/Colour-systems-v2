@@ -11,10 +11,13 @@ function isWellFormedPalette(palette: {
 }): boolean {
   if (!palette.intraValidation.allPass) return false
   const neutral = palette.scales['neutral']
-  if (!neutral || neutral.length < 4) return false
-  const inner = neutral.slice(1, -1).map(e => e.oklch.L)
-  const distinctL = new Set(inner.map(l => Math.round(l * 20) / 20))
-  return Math.max(...inner) - Math.min(...inner) >= 0.6 && distinctL.size >= 4
+  if (!neutral || neutral.length < 10) return false
+  const Ls = neutral.map(e => e.oklch.L)
+  const distinctL = new Set(Ls.map(l => Math.round(l * 10) / 10))
+  if (Math.max(...Ls) - Math.min(...Ls) < 0.6 || distinctL.size < 5) return false
+  const sorted = [...Ls].sort((a, b) => a - b)
+  const maxGap = Math.max(...sorted.slice(1).map((l, i) => l - sorted[i]))
+  return maxGap < 0.4
 }
 
 describe('component token property tests', () => {

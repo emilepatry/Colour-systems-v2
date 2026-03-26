@@ -54,6 +54,7 @@ export function synthesizeStatusTokens(
   globalVibrancy: number,
   canvas: SemanticToken,
   neutralAnchors: { light: SemanticToken; dark: SemanticToken },
+  contrastThreshold = 4.5,
 ): StatusResult {
   const tokens: Record<string, SemanticToken> = {}
   const synthesis: Record<string, 'native' | 'synthesized'> = {}
@@ -153,7 +154,7 @@ export function synthesizeStatusTokens(
     tokens[`status.${statusName}`] = fillToken
     tokens[`status.${statusName}-subtle`] = subtleToken
     tokens[`status.${statusName}-foreground`] = calculateForeground(
-      fillToken.hex, fillToken.oklch.L, neutralAnchors,
+      fillToken.hex, fillToken.oklch.L, neutralAnchors, contrastThreshold,
     )
   }
 
