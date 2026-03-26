@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react'
 import { usePaletteStore } from '@/store'
 import { useActivePalette } from '@/hooks/useActivePalette'
 import { evaluateReadiness, type ReadinessCheck } from '@/lib/readiness'
-
-const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
+import { MONO_FONT } from '@/styles/tokens'
 
 const STATUS_COLOURS: Record<ReadinessCheck['status'], string> = {
   pass: '#22c55e',
@@ -39,7 +38,7 @@ export default function ReadinessChecklist() {
           className="text-[11px]"
           style={{ fontFamily: MONO_FONT, color: '#999' }}
         >
-          Readiness
+          Quality checks
         </span>
         <span
           className="text-[11px]"

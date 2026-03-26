@@ -1,8 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import { useActivePalette } from '@/hooks/useActivePalette'
 import type { SemanticTokenSet } from '@/engine-d'
-
-const MONO_FONT = "'JetBrains Mono', ui-monospace, monospace"
+import { MONO_FONT } from '@/styles/tokens'
 const SANS_FONT = "system-ui, -apple-system, sans-serif"
 
 function tokensToCustomProperties(
@@ -25,19 +24,32 @@ function v(role: string, fallback = 'transparent'): string {
 }
 
 export default function TokenPreview() {
-  const { semanticTokens } = useActivePalette()
+  const { semanticTokens, activeMode } = useActivePalette()
+  const cachedTokensRef = useRef<SemanticTokenSet | null>(null)
+
+  if (semanticTokens) {
+    cachedTokensRef.current = semanticTokens
+  }
+
+  useEffect(() => {
+    cachedTokensRef.current = null
+  }, [activeMode])
+
+  const displayTokens = semanticTokens ?? cachedTokensRef.current
+  const isStale = !semanticTokens && !!cachedTokensRef.current
 
   const customProperties = useMemo(
-    () => (semanticTokens ? tokensToCustomProperties(semanticTokens.tokens) : {}),
-    [semanticTokens],
+    () => (displayTokens ? tokensToCustomProperties(displayTokens.tokens) : {}),
+    [displayTokens],
   )
 
-  if (!semanticTokens) return null
+  if (!displayTokens) return null
 
   return (
     <div
       role="img"
       aria-label="Colour system preview showing surfaces, text hierarchy, buttons, status badges, and input"
+      aria-busy={isStale}
       style={{
         ...customProperties,
         borderRadius: 12,
@@ -48,6 +60,8 @@ export default function TokenPreview() {
         display: 'flex',
         flexDirection: 'column',
         gap: 16,
+        opacity: isStale ? 0.6 : 1,
+        transition: 'opacity 150ms ease-out',
       }}
     >
       {/* ── Surface Stack ─────────────────────────────────── */}
